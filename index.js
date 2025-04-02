@@ -3,6 +3,8 @@ const express = require("express");
 const { google } = require("googleapis");
 const app = express();
 
+const PORT = process.env.PORT || 3000; // ← Render用のPORT
+
 const oauth2Client = new google.auth.OAuth2(
   process.env.CLIENT_ID,
   process.env.CLIENT_SECRET,
@@ -51,7 +53,7 @@ app.get("/calendar/events", async (req, res) => {
   }
 });
 
-app.listen(process.env.PORT, () => {
-  console.log(`Server running at http://localhost:${process.env.PORT}`);
+// サーバー起動（Renderが指示するPORTを使う）
+app.listen(PORT, () => {
+  console.log(`Server running at http://localhost:${PORT}`);
 });
-
