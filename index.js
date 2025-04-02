@@ -16,12 +16,12 @@ const oauth2Client = new google.auth.OAuth2(
 // スコープ（カレンダー読み取り専用）
 const SCOPES = ["https://www.googleapis.com/auth/calendar.readonly"];
 
-// ログインURL生成
+// 認証用URL生成
 app.get("/auth", (req, res) => {
   const url = oauth2Client.generateAuthUrl({
     access_type: "offline",
     scope: SCOPES,
-    prompt: "consent", // ← refresh_tokenを確実にもらうため
+    prompt: "consent"
   });
   res.redirect(url);
 });
@@ -40,7 +40,7 @@ app.get("/oauth2callback", async (req, res) => {
   }
 });
 
-// GPT用：予定取得API
+// 1年分の予定取得
 app.get("/calendar/events", async (req, res) => {
   if (!fs.existsSync(TOKEN_PATH)) {
     return res.status(401).send("認証トークンが見つかりません。まず /auth にアクセスしてください。");
@@ -51,14 +51,18 @@ app.get("/calendar/events", async (req, res) => {
     oauth2Client.setCredentials(tokens);
 
     const calendar = google.calendar({ version: "v3", auth: oauth2Client });
-    const now = new Date().toISOString();
+
+    const now = new Date();
+    const oneYearLater = new Date();
+    oneYearLater.setFullYear(now.getFullYear() + 1);
 
     const response = await calendar.events.list({
       calendarId: "primary",
-      timeMin: now,
-      maxResults: 5,
+      timeMin: now.toISOString(),
+      timeMax: oneYearLater.toISOString(),
+      maxResults: 2500,
       singleEvents: true,
-      orderBy: "startTime",
+      orderBy: "startTime"
     });
 
     res.json(response.data.items);
@@ -68,6 +72,7 @@ app.get("/calendar/events", async (req, res) => {
   }
 });
 
+// サーバー起動
 app.listen(PORT, () => {
   console.log(`Server running at http://localhost:${PORT}`);
 });
